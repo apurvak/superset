@@ -111,8 +111,7 @@ const ContentPage = () => {
     } else if (owner === SHARED_BY_YOU) {
       tempData = data.filter(
         (row: any) =>
-          !row.owners.filter((owner: any) => owner.username === username)
-            .length,
+          !row.owners.filter((owner: any) => owner.username === username).length,
       );
     } else {
       tempData = [...data];
@@ -144,11 +143,11 @@ const ContentPage = () => {
     setFilteredTableData(tempData);
   }, [searchtext, data, sort, owner, datasourceOne]);
 
-
+  
   const handleSearch = (value: string) => {
     const optionTemp: Array<any>;
     optionTemp = [];
-    tableData.columns.map((itm: any) => {
+    column: tableData.columns.map((itm: any) => {
       optionTemp.push({ value: itm.column_name });
     });
 
