@@ -161,8 +161,8 @@ const ContentPage = () => {
     setColumnExpression(columnExpression + value);
   };
 
-  const handleChange = (ev: React.ChangeEvent<HTMLInputElement>) => {
-    setColumnExpression(ev.target.value);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setColumnExpression(e.target.value);
   };
 
   const handleSearchtext = (ev: React.ChangeEvent<HTMLInputElement>) => {
