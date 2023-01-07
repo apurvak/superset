@@ -1,101 +1,128 @@
-import React, { useRef, useState } from 'react';
-import { Tabs, Row, Col, Button, Typography, Table, Tooltip } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { Tabs, Row, Col, Button, Table, Tooltip } from 'antd';
+import shortid from 'shortid';
 import {
   ShareAltOutlined,
   EditOutlined,
   EyeOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import { SupersetTheme, useTheme } from '@superset-ui/core';
+import { SupersetClient, SupersetTheme, useTheme } from '@superset-ui/core';
+import { TablePaginationConfig } from 'antd/es/table';
 
-const { Title } = Typography;
+interface ViewTablePageProps {
+  tables: any[];
+  active: number;
+}
 
-const ViewTablePage = () => {
-  const columns: any = [
-    {
-      title: 'Product Cost',
-      dataIndex: 'col1',
-      key: 'col1',
-      align: 'center',
+interface TableParams {
+  pagination?: TablePaginationConfig;
+}
+
+const ViewTablePage = ({ tables, active }: ViewTablePageProps) => {
+  const [columns, setColumns] = useState([] as any);
+  const [data, setData] = useState([] as any);
+  const [tableParams, setTableParams] = useState<TableParams>({
+    pagination: {
+      current: 1,
+      pageSize: 10,
     },
-    {
-      title: 'Sales Cost',
-      dataIndex: 'col2',
-      key: 'col2',
-      align: 'center',
-    },
-    {
-      title: 'No Of New Customers',
-      dataIndex: 'col3',
-      key: 'col3',
-      align: 'center',
-    },
-    {
-      title: 'CAC',
-      dataIndex: 'col4',
-      key: 'col4',
-      align: 'center',
-    },
-  ];
-  const data = [
-    {
-      key: '1',
-      col1: 'Table Row',
-      col2: 'Table Row',
-      col3: 'Table Row',
-      col4: 'Table Row',
-    },
-    {
-      key: '2',
-      col1: 'Table Row',
-      col2: 'Table Row',
-      col3: 'Table Row',
-      col4: 'Table Row',
-    },
-    {
-      key: '3',
-      col1: 'Table Row',
-      col2: 'Table Row',
-      col3: 'Table Row',
-      col4: 'Table Row',
-    },
-    {
-      key: '4',
-      col1: 'Table Row',
-      col2: 'Table Row',
-      col3: 'Table Row',
-      col4: 'Table Row',
-    },
-    {
-      key: '5',
-      col1: 'Table Row',
-      col2: 'Table Row',
-      col3: 'Table Row',
-      col4: 'Table Row',
-    },
-    {
-      key: '6',
-      col1: 'Table Row',
-      col2: 'Table Row',
-      col3: 'Table Row',
-      col4: 'Table Row',
-    },
-  ];
-  const initialItems = [
-    {
-      label: 'Sales - All India -2022',
-      key: '1',
-    },
-    {
-      label: 'Sales - All Western States',
-      key: '2',
-    },
-  ];
-  const [activeKey, setActiveKey] = useState(initialItems[0].key);
+  });
+  const initialItems = tables.map((table, idx) => ({
+    label: `Table ${table.table_name}`,
+    key: `${idx + 1}`,
+  }));
+  const [activeKey, setActiveKey] = useState(initialItems[active].key);
   const [items, setItems] = useState(initialItems);
+
+  const loadTableData = () => {
+    const data = tables[Number(activeKey) - 1];
+    const limit = tableParams.pagination?.pageSize ?? 10;
+    const offset =
+      (tableParams.pagination?.pageSize ?? 10) *
+      ((tableParams.pagination?.current ?? 1) - 1);
+    const postPayload = {
+      client_id: shortid.generate(),
+      database_id: data.database.id,
+      json: true,
+      runAsync: false,
+      schema: data.schema,
+      sql: `SELECT * FROM public.${data.table_name} LIMIT ${limit} OFFSET ${offset}`,
+      expand_data: true,
+    };
+
+    const search = window.location.search || '';
+    SupersetClient.post({
+      endpoint: `/superset/sql_json/${search}`,
+      body: JSON.stringify(postPayload),
+      headers: { 'Content-Type': 'application/json' },
+      parseMethod: 'json-bigint',
+    }).then(({ json }) => {
+      setColumns(
+        json.columns.map((column: any) => ({
+          title: column.name,
+          dataIndex: column.name,
+          key: column.name,
+          align: 'center',
+        })),
+      );
+      setData(json.data);
+    });
+  };
+
+  const loadPagination = () => {
+    const data = tables[Number(activeKey) - 1];
+    const postPayload = {
+      client_id: shortid.generate(),
+      database_id: data.database.id,
+      json: true,
+      runAsync: false,
+      schema: data.schema,
+      sql: `SELECT COUNT(*) FROM public.${data.table_name}`,
+      expand_data: true,
+    };
+
+    const search = window.location.search || '';
+    SupersetClient.post({
+      endpoint: `/superset/sql_json/${search}`,
+      body: JSON.stringify(postPayload),
+      headers: { 'Content-Type': 'application/json' },
+      parseMethod: 'json-bigint',
+    }).then(({ json }) => {
+      setTableParams({
+        ...tableParams,
+        pagination: {
+          ...tableParams.pagination,
+          total: json.data[0].count,
+        },
+      });
+    });
+  };
+
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    setTableParams({ pagination });
+  };
+
+  useEffect(() => {
+    loadTableData();
+    loadPagination();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey]);
+
+  useEffect(() => {
+    loadTableData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(tableParams)]);
+
   const newTabIndex = useRef(0);
   const onChange = (newActiveKey: any) => {
     setActiveKey(newActiveKey);
+    setTableParams({
+      pagination: {
+        current: 1,
+        pageSize: 10,
+      },
+    });
   };
   const add = () => {
     const curIndex = newTabIndex.current + 1;
@@ -144,16 +171,14 @@ const ViewTablePage = () => {
           activeKey={activeKey}
           onEdit={onEdit}
         >
-          <Tabs.TabPane tab="Sales - All India -2022" key="tab1" />
-          <Tabs.TabPane tab="Sales - All Western States" key="tab2" />
+          {initialItems.map(item => (
+            <Tabs.TabPane tab={item.label} key={item.key} />
+          ))}
         </Tabs>
       </Row>
       <Row style={{ width: '100%', marginTop: '10px' }}>
         <Col span={12}>
-          <Row>
-            <Title level={3}>All Tables</Title>
-          </Row>
-          <Row>This table contains pan inda sales data</Row>
+          <Row>Uploaded on 21 aug 22, 12:00pm IST</Row>
         </Col>
         <Col span={12} style={{ display: 'inline-block' }}>
           <Row style={{ float: 'right' }}>
@@ -202,6 +227,8 @@ const ViewTablePage = () => {
       <Table
         columns={columns}
         dataSource={data}
+        pagination={tableParams.pagination}
+        onChange={handleTableChange}
         style={{ width: '100%', marginTop: '24px' }}
         bordered
       />

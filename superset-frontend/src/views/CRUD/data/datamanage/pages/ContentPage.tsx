@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, MouseEventHandler } from 'react';
 import {
   Row,
   Col,
@@ -66,6 +66,10 @@ interface DataProperties {
   table_name: string;
 }
 
+interface ContentPageProps {
+  onViewTable: Function;
+}
+
 const {
   user: { username },
 } = JSON.parse(
@@ -76,7 +80,7 @@ const ALL = 'ALL';
 const SHARED_WITH_YOU = 'SHARED_WITH_YOU';
 const SHARED_BY_YOU = 'SHARED_BY_YOU';
 
-const ContentPage = () => {
+const ContentPage = ({ onViewTable }: ContentPageProps) => {
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState(0);
   const [owner, setOwner] = useState(ALL);
@@ -161,7 +165,7 @@ const ContentPage = () => {
     setColumnExpression(columnExpression + value);
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: any) => {
     setColumnExpression(e.target.value);
   };
 
@@ -618,6 +622,7 @@ const ContentPage = () => {
                             color: theme.colors.quotron.black,
                             width: '100%',
                           }}
+                          onClick={() => onViewTable(row)}
                         >
                           View
                         </Button>

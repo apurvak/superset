@@ -12,13 +12,14 @@ import UploadCsv from 'src/views/components/Upload';
 import HeaderPage from './pages/HeaderPage';
 import ContentPage from './pages/ContentPage';
 import ViewSearchPage from './pages/ViewSearchPage';
-// import HeaderViewTablePage from './pages/HeaderViewTablePage';
-// import ViewTablePage from './pages/ViewTablePage';
+import HeaderViewTablePage from './pages/HeaderViewTablePage';
+import ViewTablePage from './pages/ViewTablePage';
 
 const { Header, Content, Sider } = Layout;
 
 const DatamanageList = () => {
   const theme: SupersetTheme = useTheme();
+
   const [outLined, setoutLined] = useState('1');
 
   const onShowUploadUI = () => {
@@ -27,6 +28,25 @@ const DatamanageList = () => {
   const handleOutLined = (ev: any) => {
     setoutLined(ev.key);
   };
+
+  const [viewTable, setViewTable] = useState(false);
+  const [tables, setTables] = useState([] as any);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  const onViewTable = (data: any) => {
+    const idx = tables.findIndex((table: any) => table.id === data.id);
+    if (idx === -1) {
+      setTables([...tables, data]);
+    }
+    setActiveIdx(idx === -1 ? tables.length : idx);
+    setViewTable(true);
+  };
+
+  const onBack = () => {
+    setViewTable(false);
+    setActiveIdx(0);
+  };
+
   return (
     <Layout>
       <Sider
@@ -93,8 +113,8 @@ const DatamanageList = () => {
               background: theme.colors.quotron.white,
             }}
           >
-            <HeaderPage onShowUploadUI={onShowUploadUI} />
-            {/* <HeaderViewTablePage /> */}
+            {!viewTable && <HeaderPage onShowUploadUI={onShowUploadUI} />}
+            {viewTable && <HeaderViewTablePage onBack={onBack} />}
           </Header>
 
           <Content
@@ -104,7 +124,8 @@ const DatamanageList = () => {
               padding: '48px',
             }}
           >
-            <ContentPage />
+            {!viewTable && <ContentPage onViewTable={onViewTable} />}
+            {viewTable && <ViewTablePage tables={tables} active={activeIdx} />}
           </Content>
         </Layout>
       )}
