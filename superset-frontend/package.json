@@ -206,7 +206,11 @@
     "urijs": "^1.19.8",
     "use-immer": "^0.6.0",
     "use-query-params": "^1.1.9",
-    "yargs": "^15.4.1"
+    "yargs": "^15.4.1",
+    "yeoman-assert": "^3.1.1",
+    "yeoman-generator": "^5.7.0",
+    "yeoman-test": "^7.1.0",
+    "yosay": "^2.0.2"
   },
   "devDependencies": {
     "@applitools/eyes-storybook": "^3.27.6",
