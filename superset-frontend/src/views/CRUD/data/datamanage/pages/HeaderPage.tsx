@@ -391,7 +391,7 @@ const HeaderPage = (props: IProsp) => {
                 </Row>
                 <Row
                   style={{
-                    border: `5px solid ${theme.colors.quotron.gray_white}`,
+                    border: `5px solid rgb(250,250,250)`,
                     borderRadius: 10,
                     height: 50,
                   }}
@@ -469,7 +469,7 @@ const HeaderPage = (props: IProsp) => {
                               align="middle"
                               style={{
                                 marginLeft: '20px',
-                                borderBottom: `2px solid ${theme.colors.quotron.gray_white}`,
+                                borderBottom: `2px solid rgb(250,250,250)`,
                               }}
                               key={table.id.toString()}
                             >
@@ -497,7 +497,7 @@ const HeaderPage = (props: IProsp) => {
               <Col
                 span={1}
                 style={{
-                  borderRight: `1px solid ${theme.colors.quotron.gray_white} `,
+                  borderRight: `1px solid rgb(250,250,250) `,
                 }}
               />
               <Col span={8}>
