@@ -150,7 +150,7 @@ const ContentPage = () => {
         (user: any) => user.id.toString() === e.target.value,
       );
       setSharePeople(sharePeople.concat(userList[index]));
-      let temp_userList = [...userList];
+      const temp_userList = [...userList];
       temp_userList.splice(index, 1);
       setUserList(temp_userList);
     }
