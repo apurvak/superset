@@ -391,7 +391,7 @@ const HeaderPage = (props: IProsp) => {
                 </Row>
                 <Row
                   style={{
-                    border: `5px solid ${theme.colors.quotron.gray_white}`,
+                    border: `5px solid rgb(250,250,250)`,
                     borderRadius: 10,
                     height: 50,
                   }}
