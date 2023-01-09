@@ -30,7 +30,7 @@ import type { SelectProps } from 'antd/es/select';
 import { useResizeDetector } from 'react-resize-detector';
 import ChartContainer from 'src/components/Chart/ChartContainer';
 import ColorSchemeControl, {
-  ColorSchemes
+  ColorSchemes,
 } from 'src/explore/components/controls/ColorSchemeControl/index';
 import { DataTablesPane } from 'src/explore/components/DataTablesPane/index';
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
