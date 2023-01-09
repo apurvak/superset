@@ -29,7 +29,7 @@ import type { SelectProps } from 'antd/es/select';
 
 import { useResizeDetector } from 'react-resize-detector';
 import ChartContainer from 'src/components/Chart/ChartContainer';
-import ColorSchemeControl from 'src/explore/components/controls/ColorSchemeControl';
+import ColorSchemeControl, {ColorSchemes} from 'src/explore/components/controls/ColorSchemeControl/index';
 import { DataTablesPane } from 'src/explore/components/DataTablesPane/index';
 import { FeatureFlag, isFeatureEnabled } from 'src/featureFlags';
 import {
@@ -144,7 +144,7 @@ const ViewSearchPage = () => {
     onChange: () => setPreviewState(true),
     clearable: true,
     choices: () => categoricalSchemeRegistry.keys().map(s => [s, s]),
-    schemes: () => categoricalSchemeRegistry.getMap(),
+    schemes: () => (categoricalSchemeRegistry.getMap() as ColorSchemes),
     isLinear: false,
   };
 
