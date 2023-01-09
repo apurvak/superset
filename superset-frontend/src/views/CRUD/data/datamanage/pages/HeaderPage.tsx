@@ -9,6 +9,7 @@ import {
   Drawer,
   Space,
   Input,
+  notification,
 } from 'antd';
 import {
   ShareAltOutlined,
@@ -26,6 +27,7 @@ import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 const { Title } = Typography;
 interface IProsp {
   onShowUploadUI: () => void;
+  updateContent: () => void;
 }
 const HeaderPage = (props: IProsp) => {
   const theme: SupersetTheme = useTheme();
@@ -64,6 +66,36 @@ const HeaderPage = (props: IProsp) => {
       );
     });
     setIsSelectPeople(true);
+  };
+
+  const actionShareTable = () => {
+    setIsSelectTable(false);
+    handleSelectPeople();
+  };
+
+  const handleSharePeople = () => {
+    actionSharePeopleSave();
+  };
+
+  const handleShareTable = () => {
+    actionShareTable();
+  };
+  const actionSharePeopleSave = async () => {
+    shareTable.map((table: any) =>
+      SupersetClient.put({
+        endpoint: `/api/v1/dataset/${table.id}?override_columns=true`,
+        jsonPayload: {
+          owners: sharePeople.map((user: any) => user.id),
+        },
+      }).then(async ({ json }) => {
+        notification.success({
+          message: 'Success',
+          description: 'Shared people  successfully',
+        });
+        handleCancel();
+        props.updateContent();
+      }),
+    );
   };
   const [sharePeople, setSharePeople] = useState<any>([]);
   const handleUserSearch = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -327,12 +359,13 @@ const HeaderPage = (props: IProsp) => {
                 <Button
                   size="large"
                   style={{
-                    background: 'black',
+                    background: theme.colors.quotron.black,
                     borderRadius: 10,
                     fontSize: 20,
-                    color: 'white',
+                    color: theme.colors.quotron.white,
                     height: 50,
                   }}
+                  onClick={handleSharePeople}
                 >
                   {'Share access->'}
                 </Button>
@@ -348,7 +381,7 @@ const HeaderPage = (props: IProsp) => {
               </Button>
             </Row>
             <Row>
-              <Col span={16}>
+              <Col span={15}>
                 <Row>
                   <Col span={16}>
                     <Title level={5} style={{ marginTop: '24px' }}>
@@ -358,7 +391,7 @@ const HeaderPage = (props: IProsp) => {
                 </Row>
                 <Row
                   style={{
-                    border: `5px solid rgb(250,250,250)`,
+                    border: `5px solid ${theme.colors.quotron.gray_white}`,
                     borderRadius: 10,
                     height: 50,
                   }}
@@ -436,7 +469,7 @@ const HeaderPage = (props: IProsp) => {
                               align="middle"
                               style={{
                                 marginLeft: '20px',
-                                borderBottom: '2px solid rgb(250,250,250)',
+                                borderBottom: `2px solid ${theme.colors.quotron.gray_white}`,
                               }}
                               key={table.id.toString()}
                             >
@@ -462,9 +495,12 @@ const HeaderPage = (props: IProsp) => {
                 </Row>
               </Col>
               <Col
-                span={8}
-                style={{ borderLeft: '1px solid rgb(250,250,250)' }}
-              >
+                span={1}
+                style={{
+                  borderRight: `1px solid ${theme.colors.quotron.gray_white} `,
+                }}
+              />
+              <Col span={8}>
                 <Row>
                   <Title
                     level={5}
@@ -534,9 +570,10 @@ const HeaderPage = (props: IProsp) => {
                     background: theme.colors.quotron.black,
                     borderRadius: 10,
                     fontSize: 20,
-                    color: 'white',
+                    color: theme.colors.quotron.white,
                     height: 50,
                   }}
+                  onClick={handleShareTable}
                 >
                   {'Share access->'}
                 </Button>

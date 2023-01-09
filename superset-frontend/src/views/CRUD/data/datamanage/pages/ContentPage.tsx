@@ -19,6 +19,7 @@ import {
   Switch,
   Dropdown,
   notification,
+  AutoComplete,
 } from 'antd';
 import {
   AppstoreOutlined,
@@ -78,7 +79,7 @@ const ALL = 'ALL';
 const SHARED_WITH_YOU = 'SHARED_WITH_YOU';
 const SHARED_BY_YOU = 'SHARED_BY_YOU';
 
-const ContentPage = () => {
+const ContentPage = ({ update }: { update: boolean }) => {
   const [open, setOpen] = useState(false);
   const [sort, setSort] = useState(0);
   const [owner, setOwner] = useState(ALL);
@@ -99,9 +100,10 @@ const ContentPage = () => {
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePeople, setSharePeople] = useState<any>([]);
   const [isSelectPeople, setIsSelectPeople] = useState(false);
-  const [size, setSize] = useState<SizeType>('large');
+  const [size] = useState<SizeType>('large');
   const [userList, setUserList] = useState<any>([]);
   const [searchUser, setSearchUser] = useState('');
+  const [options, setOptions] = useState<{ value: string }[]>([]);
 
   const handleSearchtext = (ev: React.ChangeEvent<HTMLInputElement>) => {
     setSearchtext(ev.target.value);
@@ -111,20 +113,8 @@ const ContentPage = () => {
     setSearchUser(ev.target.value);
   };
 
-  const handleSort = () => {
-    setSort((sort + 1) % 3);
-  };
-
-  const handleOwner = (ev: any) => {
-    setOwner(ev.key);
-  };
-
   const cancelSelectPeople = () => {
     setIsSelectPeople(false);
-  };
-
-  const handleDatasourceChange = (ev: CheckboxChangeEvent) => {
-    setDatasourceOne(ev.target.checked);
   };
 
   const handleSelectPeople = () => {
@@ -200,6 +190,40 @@ const ContentPage = () => {
     // set filtered table data
     setFilteredTableData(tempData);
   }, [searchtext, data, sort, owner, datasourceOne]);
+
+  const handleSearch = (value: string) => {
+    // eslint-disable-next-line
+    const optionTemp: Array<any> = [];
+    tableData.columns.forEach(function (itm: any) {
+      optionTemp.push({ value: itm.column_name });
+    });
+
+    setOptions(!value ? [] : optionTemp);
+  };
+
+  const handleKeyPress = (ev: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    console.log('handleKeyPress', ev);
+  };
+
+  const onSelect = (value: string) => {
+    setColumnExpression(columnExpression);
+  };
+
+  const handleChange = (value: string) => {
+    setColumnExpression(value);
+  };
+
+  const handleSort = () => {
+    setSort((sort + 1) % 3);
+  };
+
+  const handleOwner = (ev: any) => {
+    setOwner(ev.key);
+  };
+
+  const handleDatasourceChange = (ev: CheckboxChangeEvent) => {
+    setDatasourceOne(ev.target.checked);
+  };
 
   const theme: SupersetTheme = useTheme();
 
@@ -311,7 +335,7 @@ const ContentPage = () => {
       column_name: columnName,
       created_on: now.toISOString(),
       description: null,
-      expression: null,
+      expression: columnExpression,
       extra: '{}',
       filterable: true,
       groupby: true,
@@ -347,6 +371,22 @@ const ContentPage = () => {
     });
     await setIsModalOpen(false);
     if (columnData === '') handleColumnAdd();
+  };
+
+  const actionSharePeopleSave = async () => {
+    await SupersetClient.put({
+      endpoint: `/api/v1/dataset/${tableData.id}?override_columns=true`,
+      jsonPayload: {
+        owners: sharePeople.map((user: any) => user.id),
+      },
+    }).then(async ({ json }) => {
+      notification.success({
+        message: 'Success',
+        description: 'Shared people  successfully',
+      });
+      await actionGetData();
+      handleCancel();
+    });
   };
 
   const actionColumnSave = async () => {
@@ -401,10 +441,13 @@ const ContentPage = () => {
   const handleEditTableSave = () => {
     actionColumnSave();
   };
+  const handleSharePeople = () => {
+    actionSharePeopleSave();
+  };
 
   useEffect(() => {
     actionGetData();
-  }, []);
+  }, [update]);
 
   useEffect(() => {
     setData(data);
@@ -744,7 +787,7 @@ const ContentPage = () => {
         </Row>
         <Alert
           message="Please note that any changes made to table details would be persisted on"
-          description="Quotron only, it will not affect anything orignal data source"
+          description="Quotron only, it will not affect anything original data source"
           type="warning"
           style={{ background: theme.colors.quotron.gray_white }}
         />
@@ -771,7 +814,7 @@ const ContentPage = () => {
           align="middle"
           style={{ marginTop: '24px' }}
         >
-          <Title level={4}>Columes</Title>
+          <Title level={4}>Columns</Title>
           <Button
             icon={<PlusOutlined />}
             size="large"
@@ -853,7 +896,7 @@ const ContentPage = () => {
           <Title level={3}>CAC</Title>
         </Row>
         <Title level={4} style={{ marginTop: '24px' }}>
-          Colume Name
+          Column Name
         </Title>
         <Input
           placeholder="CAC"
@@ -883,13 +926,23 @@ const ContentPage = () => {
             />
           </Col>
         </Row>
-        <TextArea
-          rows={4}
-          value={columnExpression}
-          onChange={(e: any) => {
-            setColumnExpression(e.target.value);
-          }}
-        />
+        <AutoComplete
+          style={{ width: '100%' }}
+          options={options}
+          defaultValue={columnExpression}
+          filterOption
+          onSelect={onSelect}
+          onSearch={handleSearch}
+          onChange={handleChange}
+        >
+          <TextArea
+            placeholder="input here"
+            className="custom"
+            value={columnExpression}
+            style={{ height: 50 }}
+            onKeyPress={handleKeyPress}
+          />
+        </AutoComplete>
         <Row justify="center" gutter={16} style={{ marginTop: '24px' }}>
           <Col span="12">
             <Button
@@ -1080,12 +1133,13 @@ const ContentPage = () => {
                 <Button
                   size={size}
                   style={{
-                    background: 'black',
+                    background: theme.colors.quotron.black,
                     borderRadius: 10,
                     fontSize: 20,
-                    color: 'white',
+                    color: theme.colors.quotron.white,
                     height: 50,
                   }}
+                  onClick={handleSharePeople}
                 >
                   {'Share access->'}
                 </Button>
@@ -1105,7 +1159,7 @@ const ContentPage = () => {
               <Col
                 style={{
                   background: theme.colors.quotron.gray_white,
-                  color: 'black',
+                  color: theme.colors.quotron.black,
                   width: '100%',
                   height: '150px',
                   border: '1px solid black',
@@ -1125,7 +1179,7 @@ const ContentPage = () => {
               <Col
                 style={{
                   background: theme.colors.quotron.gray_white,
-                  color: 'black',
+                  color: theme.colors.quotron.black,
                   width: '100%',
                   height: '150px',
                   border: '1px solid black',
