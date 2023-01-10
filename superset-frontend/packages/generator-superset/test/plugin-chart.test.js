@@ -20,6 +20,7 @@
 /* eslint-env node */
 const path = require('path');
 const assert = require('yeoman-assert');
+// eslint-disable-next-line import/no-unresolved
 const helpers = require('yeoman-test');
 const fs = require('fs-extra');
 const pluginChartModule = require('../generators/plugin-chart');

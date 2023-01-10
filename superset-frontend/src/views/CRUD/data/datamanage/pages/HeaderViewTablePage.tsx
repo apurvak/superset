@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { MouseEventHandler } from 'react';
 import { Row, Col, Typography, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { SupersetTheme, useTheme } from '@superset-ui/core';
 
 const { Text } = Typography;
 
-const HeaderViewTablePage = () => {
+interface HeaderViewTablePageProps {
+  onBack: MouseEventHandler;
+}
+
+const HeaderViewTablePage = ({ onBack }: HeaderViewTablePageProps) => {
   const theme: SupersetTheme = useTheme();
   return (
     <Row>
@@ -13,6 +17,7 @@ const HeaderViewTablePage = () => {
         <Button
           icon={<ArrowLeftOutlined />}
           style={{ background: 'none', color: theme.colors.quotron.black }}
+          onClick={onBack}
         />
       </Col>
       <Col>
