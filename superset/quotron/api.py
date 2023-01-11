@@ -13,15 +13,20 @@ from superset.charts.schemas import ChartPostSchema
 from superset.common.query_context import QueryContext
 from superset.common.query_context_factory import QueryContextFactory
 from superset.common.query_object import QueryObject
+from superset.datasets.commands.exceptions import DatasetNotFoundError
 from superset.datasets.dao import DatasetDAO
 from superset.extensions import event_logger, cache_manager
+from superset.quotron import firestore_db, utils
 from superset.quotron.DataTypes import Autocomplete, QuotronChart, Params, Answer, \
     QuotronQueryContext
-from superset.quotron.schemas import AutoCompleteSchema, QuestionSchema, AnswerSchema
+from superset.quotron.firestore_db import getColumnHistory, update_table
+from superset.quotron.schemas import AutoCompleteSchema, QuestionSchema, AnswerSchema, \
+    ColumnHistorySchema
+import superset.quotron.utils
 from superset.superset_typing import AdhocMetric, AdhocColumn
 from superset.utils.core import DatasourceDict, AdhocFilterClause, \
     QueryObjectFilterClause
-
+import re
 logger = logging.getLogger(__name__)
 
 
@@ -30,19 +35,19 @@ def get_where_clause(sql):
     for item in parsed_sql[0].tokens:
         if isinstance(item, sqlparse.sql.Where):
             clause = item.value
-            stripped_clause = clause.replace('where', '')
+            stripped_clause = re.sub('WHERE', '', clause, flags=re.IGNORECASE)
             logger.debug(f'stripped clause: {stripped_clause}')
-            return stripped_clause
+            return f'{stripped_clause}'
 
 
 
 class QuotronRestApi(BaseApi):
     include_route_methods = {
-        "auto_complete", "answer", "answer_debug"
+        "auto_complete", "answer", "answer_debug", "column_history", "init_column_history"
     }
     resource_name = "quotron"
     openapi_spec_tag = "Quotron"
-    openapi_spec_component_schemas = (AutoCompleteSchema, QuestionSchema)
+    openapi_spec_component_schemas = (AutoCompleteSchema, QuestionSchema,ColumnHistorySchema, AnswerSchema)
 
     @cache_manager.cache.memoize(timeout=60)
     @expose("/auto_complete/", methods=["GET"])
@@ -64,7 +69,10 @@ class QuotronRestApi(BaseApi):
                                 $ref: "#/components/schemas/AutoCompleteSchema"
                 """
         logger.info(g.user)
+        autoCompleteQuestions = firestore_db.getAutoComplete()
+        logger.info(autoCompleteQuestions)
         autocomplete = Autocomplete(email=g.user.email,question="what is the highest revenue?", time=datetime.datetime.now())
+
         schema = AutoCompleteSchema()
         result = schema.dump(autocomplete)
         return self.response(200, result = [result])
@@ -160,29 +168,32 @@ class QuotronRestApi(BaseApi):
         req = QuestionSchema().load(request.json)
         logger.info(g.user)
         question = req['question']
-
+        data = {
+  "email": "test@quotron.ai",
+  "question": question
+}
         #1. Get quotron SQL query
-        resp =requests.get(f'https://nlp.quotron.ai/ask/{question}')
+        resp =requests.post(f'https://nlp.quotron.ai/answer', data = json.dumps(data))
 
         #2. Parse quotron query
-        sql = resp.json()['query']
+        sql = resp.json()['sql']['generated_code']
         where_clause = get_where_clause(sql)
         columns = Parser(sql).columns
         table = Parser(sql).tables[0]
         logger.info(columns)
         logger.info(table)
         add_model_schema = ChartPostSchema()
-
-        table = get_table_from_name(table)
+        time_column = utils.get_time_column(table)
+        table = utils.get_table_from_name(table)
         superset_columns = []
         for column in columns:
-            superset_columns.append(get_column_from_name(column))
+            superset_columns.append(utils.get_column_from_name(column))
 
         superset_metrics = []
         for superset_column in superset_columns:
             superset_metrics.append(AdhocMetric(aggregate='AVG', column=superset_column, expressionType='SIMPLE'))
 
-        series_limit_metric = AdhocMetric(aggregate='AVG', column=get_column_from_name('calendar_year'),expressionType='SIMPLE' )
+        series_limit_metric = AdhocMetric(aggregate='AVG', column=utils.get_column_from_name(time_column),expressionType='SIMPLE' )
 
         datasource = DatasourceDict(type="table",id=str(table.id))
         extras = {
@@ -207,7 +218,7 @@ class QuotronRestApi(BaseApi):
 	}]
         params = Params(datasource=datasource['id'] + '__' + datasource['type'], viz_type="dist_bar",
                         time_range="No Filter",
-                        metrics=superset_metrics,groupby=["calendar_year"],
+                        metrics=superset_metrics,groupby=[time_column],
                         timeseries_limit_metric=series_limit_metric,
                         order_desc=False,
                         adhoc_filters=adhoc_filters,
@@ -225,25 +236,60 @@ class QuotronRestApi(BaseApi):
         result = schema.dump(answer)
         return self.response(200, result = result)
 
+    @expose("/column_history/<pk>", methods=["GET"])
+    def column_history(self, pk: int) -> Response:
+        """
+                ---
+                get:
+                  description: get column history
+                  parameters:
+                      - in: path
+                        name: pk
+                        schema:
+                          type: integer
+                  responses:
+                    200:
+                      description: Column history of user's changes
+                      content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ColumnHistorySchema"
+                    404:
+
+        """
+        try:
+            column_history  = getColumnHistory(column_id=pk)
+            logger.info(column_history)
+            return self.response(200, result = column_history)
+        except DatasetNotFoundError:
+            response = self.response_404()
+            return response
 
 
-def get_table_from_name(table_name):
-    table = DatasetDAO.find_table_by_name(table_name)
-    return table
+    @expose("/init_column_history", methods=["GET"])
+    def init_column_history(self) -> Response:
+        """
+                ---
+                get:
+                  description: init column history API to initialize google firebase once.
 
-def get_column_from_name(column_name):
-    column = DatasetDAO.find_column_by_name(column_name)
-    return AdhocColumn(columnType=column.type, id=column.id, column_name = column.column_name, groupby = True)
-
-def serialize_query_context(qc: QueryContext):
-    datasource = DatasourceDict(type=qc.datasource.type, id=str(qc.datasource.id))
-    return None
-
-
+                  responses:
+                    200:
+                      description: Gets column history
+                      content:
+                        application/json:
+                    404:
+                        description: returns 404 if history record is absent for given column id.
 
 
-
-
+                """
+        try:
+            tables = DatasetDAO.find_all()
+            for table in tables:
+                update_table(table.id)
+                logger.info(table.id)
+        except DatasetNotFoundError:
+            response = self.response_404()
 
 
 

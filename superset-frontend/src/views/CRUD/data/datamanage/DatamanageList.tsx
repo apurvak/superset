@@ -21,6 +21,10 @@ const DatamanageList = () => {
   const theme: SupersetTheme = useTheme();
 
   const [outLined, setoutLined] = useState('1');
+  const [update, setUpdate] = useState<boolean>(true);
+  const updateContent = () => {
+    setUpdate(!update);
+  };
 
   const onShowUploadUI = () => {
     setoutLined('3');

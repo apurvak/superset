@@ -9,6 +9,7 @@ import {
   Drawer,
   Space,
   Input,
+  notification,
 } from 'antd';
 import {
   ShareAltOutlined,
@@ -26,6 +27,7 @@ import { CheckboxChangeEvent } from 'antd/lib/checkbox';
 const { Title } = Typography;
 interface IProsp {
   onShowUploadUI: () => void;
+  updateContent: () => void;
 }
 const HeaderPage = (props: IProsp) => {
   const theme: SupersetTheme = useTheme();
@@ -64,6 +66,36 @@ const HeaderPage = (props: IProsp) => {
       );
     });
     setIsSelectPeople(true);
+  };
+
+  const actionShareTable = () => {
+    setIsSelectTable(false);
+    handleSelectPeople();
+  };
+
+  const handleSharePeople = () => {
+    actionSharePeopleSave();
+  };
+
+  const handleShareTable = () => {
+    actionShareTable();
+  };
+  const actionSharePeopleSave = async () => {
+    shareTable.map((table: any) =>
+      SupersetClient.put({
+        endpoint: `/api/v1/dataset/${table.id}?override_columns=true`,
+        jsonPayload: {
+          owners: sharePeople.map((user: any) => user.id),
+        },
+      }).then(async ({ json }) => {
+        notification.success({
+          message: 'Success',
+          description: 'Shared people  successfully',
+        });
+        handleCancel();
+        props.updateContent();
+      }),
+    );
   };
   const [sharePeople, setSharePeople] = useState<any>([]);
   const handleUserSearch = (ev: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,6 +365,7 @@ const HeaderPage = (props: IProsp) => {
                     color: theme.colors.quotron.white,
                     height: 50,
                   }}
+                  onClick={handleSharePeople}
                 >
                   {'Share access->'}
                 </Button>
@@ -358,7 +391,7 @@ const HeaderPage = (props: IProsp) => {
                 </Row>
                 <Row
                   style={{
-                    border: `5px solid ${theme.colors.quotron.gray_white}`,
+                    border: `5px solid rgb(250,250,250)`,
                     borderRadius: 10,
                     height: 50,
                   }}
@@ -436,7 +469,7 @@ const HeaderPage = (props: IProsp) => {
                               align="middle"
                               style={{
                                 marginLeft: '20px',
-                                borderBottom: `2px solid ${theme.colors.quotron.gray_white}`,
+                                borderBottom: `2px solid rgb(250,250,250)`,
                               }}
                               key={table.id.toString()}
                             >
@@ -464,7 +497,7 @@ const HeaderPage = (props: IProsp) => {
               <Col
                 span={1}
                 style={{
-                  borderRight: `1px solid ${theme.colors.quotron.gray_white} `,
+                  borderRight: `1px solid rgb(250,250,250) `,
                 }}
               />
               <Col span={8}>
@@ -540,6 +573,7 @@ const HeaderPage = (props: IProsp) => {
                     color: theme.colors.quotron.white,
                     height: 50,
                   }}
+                  onClick={handleShareTable}
                 >
                   {'Share access->'}
                 </Button>

@@ -378,6 +378,22 @@ const ContentPage = ({ onViewTable }: ContentPageProps) => {
     if (columnData === '') handleColumnAdd();
   };
 
+  const actionSharePeopleSave = async () => {
+    await SupersetClient.put({
+      endpoint: `/api/v1/dataset/${tableData.id}?override_columns=true`,
+      jsonPayload: {
+        owners: sharePeople.map((user: any) => user.id),
+      },
+    }).then(async ({ json }) => {
+      notification.success({
+        message: 'Success',
+        description: 'Shared people  successfully',
+      });
+      await actionGetData();
+      handleCancel();
+    });
+  };
+
   const actionColumnSave = async () => {
     await SupersetClient.put({
       endpoint: `/api/v1/dataset/${tableData.id}?override_columns=true`,
@@ -430,10 +446,13 @@ const ContentPage = ({ onViewTable }: ContentPageProps) => {
   const handleEditTableSave = () => {
     actionColumnSave();
   };
+  const handleSharePeople = () => {
+    actionSharePeopleSave();
+  };
 
   useEffect(() => {
     actionGetData();
-  }, []);
+  }, [update]);
 
   useEffect(() => {
     setData(data);
@@ -1126,6 +1145,7 @@ const ContentPage = ({ onViewTable }: ContentPageProps) => {
                     color: theme.colors.quotron.white,
                     height: 50,
                   }}
+                  onClick={handleSharePeople}
                 >
                   {'Share access->'}
                 </Button>

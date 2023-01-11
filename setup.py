@@ -124,7 +124,12 @@ setup(
         "wtforms-json",
         "greenlet<2.0,>=1.1.0",
         "mo-sql-parsing",
-        "sql-metadata"
+        "sql-metadata",
+        "google-cloud",
+        "firestore",
+        "google-cloud-storage",
+        "google-auth",
+        "loguru"
 
     ],
     extras_require={
