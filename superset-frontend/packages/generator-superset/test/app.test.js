@@ -18,6 +18,7 @@
  */
 
 const assert = require('yeoman-assert');
+// eslint-disable-next-line import/no-unresolved
 const helpers = require('yeoman-test');
 const appModule = require('../generators/app');
 
