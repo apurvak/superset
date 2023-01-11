@@ -216,7 +216,7 @@ const ContentPage = ({ onViewTable }: ContentPageProps) => {
 
   const handleChange = (e: any) => {
     setColumnExpression(e.target.value);
-};
+  };
 
   const handleSort = () => {
     setSort((sort + 1) % 3);
@@ -452,7 +452,7 @@ const ContentPage = ({ onViewTable }: ContentPageProps) => {
 
   useEffect(() => {
     actionGetData();
-  }, [update]);
+  }, []);
 
   useEffect(() => {
     setData(data);

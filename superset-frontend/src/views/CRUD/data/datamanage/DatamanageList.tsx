@@ -9,7 +9,6 @@ import {
   BellOutlined,
 } from '@ant-design/icons';
 import UploadCsv from 'src/views/components/Upload';
-import HeaderPage from './pages/HeaderPage';
 import ContentPage from './pages/ContentPage';
 import ViewSearchPage from './pages/ViewSearchPage';
 import HeaderViewTablePage from './pages/HeaderViewTablePage';
@@ -21,14 +20,7 @@ const DatamanageList = () => {
   const theme: SupersetTheme = useTheme();
 
   const [outLined, setoutLined] = useState('1');
-  const [update, setUpdate] = useState<boolean>(true);
-  const updateContent = () => {
-    setUpdate(!update);
-  };
 
-  const onShowUploadUI = () => {
-    setoutLined('3');
-  };
   const handleOutLined = (ev: any) => {
     setoutLined(ev.key);
   };
@@ -51,6 +43,11 @@ const DatamanageList = () => {
     setActiveIdx(0);
   };
 
+  // @ts-ignore
+  // @ts-ignore
+  // @ts-ignore
+  // @ts-ignore
+  // @ts-ignore
   return (
     <Layout>
       <Sider
@@ -117,7 +114,6 @@ const DatamanageList = () => {
               background: theme.colors.quotron.white,
             }}
           >
-            {!viewTable && <HeaderPage onShowUploadUI={onShowUploadUI} />}
             {viewTable && <HeaderViewTablePage onBack={onBack} />}
           </Header>
 
