@@ -592,3 +592,7 @@ def get_cta_schema_name(
     if not func:
         return None
     return func(database, user, schema, sql)
+
+def get_all_users():
+    users = db.session.query(security_manager.user_model).all()
+    return users

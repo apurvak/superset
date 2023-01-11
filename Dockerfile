@@ -66,8 +66,9 @@ RUN mkdir -p ${PYTHONPATH} \
         && rm -rf /var/lib/apt/lists/*
 
 COPY ./requirements/*.txt  /app/requirements/
+RUN mkdir -p /app/certs/
 COPY setup.py MANIFEST.in README.md /app/
-
+COPY certs/silicon-pattern-333521-db778484db10.json /app/certs/
 # setup.py uses the version information in package.json
 COPY superset-frontend/package.json /app/superset-frontend/
 

@@ -187,6 +187,7 @@ const USERS = [
   'Ilenia',
 ].sort();
 
+// @ts-ignore
 export const AsynchronousSelect = ({
   fetchOnlyOnSearch,
   withError,

@@ -20,6 +20,8 @@ import logging
 import os
 from typing import Any, Callable, Dict, TYPE_CHECKING
 
+import google
+from google.cloud import storage
 import wtforms_json
 from deprecation import deprecated
 from flask import Flask, redirect
@@ -47,12 +49,14 @@ from superset.extensions import (
     results_backend_manager,
     talisman,
 )
+from superset.quotron import settings
 
 from superset.security import SupersetSecurityManager
 from superset.superset_typing import FlaskResponse
 from superset.tags.core import register_sqla_event_listeners
 from superset.utils.core import pessimistic_connection_handling
 from superset.utils.log import DBEventLogger, get_event_logger_from_cfg_value
+
 
 if TYPE_CHECKING:
     from superset.app import SupersetApp
@@ -86,7 +90,11 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         """
         Called after any other init tasks
         """
-
+        os.environ[
+            "GOOGLE_APPLICATION_CREDENTIALS"] = settings.Data.google_creds_local_file
+        credentials, project = google.auth.default()
+        client = storage.Client(credentials=credentials)
+        bucket = client.get_bucket(settings.Data.database)
     def configure_celery(self) -> None:
         celery_app.config_from_object(self.config["CELERY_CONFIG"])
         celery_app.set_default()
@@ -188,6 +196,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.views.tags import TagView
         from superset.views.users.api import CurrentUserRestApi
         from superset.quotron.api import QuotronRestApi
+
         #
         # Setup API views
         #
@@ -220,6 +229,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(ReportExecutionLogRestApi)
         appbuilder.add_api(SavedQueryRestApi)
         appbuilder.add_api(QuotronRestApi)
+
         #
         # Setup regular views
         #
@@ -457,6 +467,8 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
                 "a sufficiently random sequence, ex: openssl rand -base64 42"
             )
             logger.warning(bottom_banner)
+
+
 
     def init_app(self) -> None:
         """
