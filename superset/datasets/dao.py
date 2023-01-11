@@ -47,7 +47,7 @@ class DatasetDAO(BaseDAO):  # pylint: disable=too-many-public-methods
     def find_column_by_name(
         cls, column_name: str
     ) -> Optional[id]:
-        table = db.session.query(TableColumn).filter(TableColumn.column_name.ilike(column_name)).one()
+        table = db.session.query(TableColumn).filter(TableColumn.column_name.ilike(column_name)).first()
         return table
     @staticmethod
     def get_database_by_id(database_id: int) -> Optional[Database]:

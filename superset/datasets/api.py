@@ -62,6 +62,7 @@ from superset.datasets.schemas import (
     get_delete_ids_schema,
     get_export_ids_schema,
 )
+from superset.quotron.firestore_db import update_table
 from superset.utils.core import parse_boolean_string
 from superset.views.base import DatasourceFilter, generate_download_headers
 from superset.views.base_api import (
@@ -367,6 +368,8 @@ class DatasetRestApi(BaseSupersetModelRestApi):
             else False
         )
         try:
+
+
             item = self.edit_model_schema.load(request.json)
         # This validates custom Schema with custom validations
         except ValidationError as error:
@@ -375,6 +378,7 @@ class DatasetRestApi(BaseSupersetModelRestApi):
             changed_model = UpdateDatasetCommand(pk, item, override_columns).run()
             if override_columns:
                 RefreshDatasetCommand(pk).run()
+            update_table(pk)
             response = self.response(200, id=changed_model.id, result=item)
         except DatasetNotFoundError:
             response = self.response_404()

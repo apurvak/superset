@@ -1,7 +1,5 @@
 from marshmallow import Schema, fields
 
-from superset.charts.schemas import ChartEntityResponseSchema
-
 
 class AutoCompleteSchema(Schema):
     question = fields.String(description="Question")

@@ -7,13 +7,15 @@
 #
 -r development.txt
 -r integration.txt
-# -e file:///home/exx/git/superset
+-e file:///home/exx/git/superset
     # via
     #   -r requirements/base.in
     #   -r requirements/development.in
     #   -r requirements/testing.in
 astroid==2.6.6
     # via pylint
+cachecontrol==0.12.11
+    # via firebase-admin
 cachetools==5.2.0
     # via google-auth
 coverage==5.5
@@ -22,29 +24,47 @@ db-dtypes==1.0.5
     # via pandas-gbq
 docker==5.0.0
     # via -r requirements/testing.in
+firebase-admin==6.0.1
+    # via firestore
+firestore==0.0.8
+    # via apache-superset
 flask-testing==0.8.1
     # via -r requirements/testing.in
 freezegun==1.1.0
     # via -r requirements/testing.in
 google-api-core[grpc]==2.11.0
     # via
+    #   firebase-admin
+    #   google-api-python-client
     #   google-cloud-bigquery
     #   google-cloud-bigquery-storage
     #   google-cloud-core
+    #   google-cloud-firestore
+    #   google-cloud-storage
     #   pandas-gbq
     #   sqlalchemy-bigquery
-google-auth==2.14.1
+google-api-python-client==2.72.0
+    # via firebase-admin
+google-auth==2.16.0
     # via
+    #   apache-superset
     #   google-api-core
+    #   google-api-python-client
+    #   google-auth-httplib2
     #   google-auth-oauthlib
     #   google-cloud-core
+    #   google-cloud-storage
     #   pandas-gbq
     #   pydata-google-auth
     #   sqlalchemy-bigquery
+google-auth-httplib2==0.1.0
+    # via google-api-python-client
 google-auth-oauthlib==0.7.1
     # via
     #   pandas-gbq
     #   pydata-google-auth
+google-cloud==0.34.0
+    # via apache-superset
 google-cloud-bigquery==3.4.0
     # via
     #   apache-superset
@@ -56,11 +76,22 @@ google-cloud-bigquery-storage==2.16.2
     #   pandas-gbq
     #   sqlalchemy-bigquery
 google-cloud-core==2.3.2
-    # via google-cloud-bigquery
+    # via
+    #   google-cloud-bigquery
+    #   google-cloud-firestore
+    #   google-cloud-storage
+google-cloud-firestore==2.8.0
+    # via firebase-admin
+google-cloud-storage==2.7.0
+    # via
+    #   apache-superset
+    #   firebase-admin
 google-crc32c==1.5.0
     # via google-resumable-media
 google-resumable-media==2.4.0
-    # via google-cloud-bigquery
+    # via
+    #   google-cloud-bigquery
+    #   google-cloud-storage
 googleapis-common-protos==1.57.0
     # via
     #   google-api-core
@@ -72,8 +103,14 @@ grpcio==1.51.1
     #   grpcio-status
 grpcio-status==1.51.1
     # via google-api-core
+httplib2==0.21.0
+    # via
+    #   google-api-python-client
+    #   google-auth-httplib2
 iniconfig==1.1.1
     # via pytest
+iso8601==1.1.0
+    # via firestore
 isort==5.9.3
     # via pylint
 lazy-object-proxy==1.6.0
@@ -94,11 +131,13 @@ proto-plus==1.22.1
     # via
     #   google-cloud-bigquery
     #   google-cloud-bigquery-storage
+    #   google-cloud-firestore
 protobuf==4.21.10
     # via
     #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-bigquery-storage
+    #   google-cloud-firestore
     #   googleapis-common-protos
     #   grpcio-status
     #   proto-plus
@@ -112,6 +151,12 @@ pydata-google-auth==1.4.0
     # via pandas-gbq
 pyfakefs==4.5.6
     # via -r requirements/testing.in
+pyjwt[crypto]==2.6.0
+    # via
+    #   apache-superset
+    #   firebase-admin
+    #   flask-appbuilder
+    #   flask-jwt-extended
 pylint==2.9.6
     # via -r requirements/testing.in
 pytest==6.2.4
@@ -133,6 +178,8 @@ statsd==3.3.0
     # via -r requirements/testing.in
 trino==0.319.0
     # via apache-superset
+uritemplate==4.1.1
+    # via google-api-python-client
 websocket-client==1.2.0
     # via docker
 wrapt==1.12.1
