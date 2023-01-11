@@ -20,7 +20,8 @@ from superset.quotron import firestore_db, utils
 from superset.quotron.DataTypes import Autocomplete, QuotronChart, Params, Answer, \
     QuotronQueryContext
 from superset.quotron.firestore_db import getColumnHistory, update_table
-from superset.quotron.schemas import AutoCompleteSchema, QuestionSchema, AnswerSchema
+from superset.quotron.schemas import AutoCompleteSchema, QuestionSchema, AnswerSchema, \
+    ColumnHistorySchema
 import superset.quotron.utils
 from superset.superset_typing import AdhocMetric, AdhocColumn
 from superset.utils.core import DatasourceDict, AdhocFilterClause, \
@@ -46,7 +47,7 @@ class QuotronRestApi(BaseApi):
     }
     resource_name = "quotron"
     openapi_spec_tag = "Quotron"
-    openapi_spec_component_schemas = (AutoCompleteSchema, QuestionSchema)
+    openapi_spec_component_schemas = (AutoCompleteSchema, QuestionSchema,ColumnHistorySchema, AnswerSchema)
 
     @cache_manager.cache.memoize(timeout=60)
     @expose("/auto_complete/", methods=["GET"])
@@ -248,28 +249,29 @@ class QuotronRestApi(BaseApi):
                           type: integer
                   responses:
                     200:
-                      description: Gets column history
+                      description: Column history of user's changes
                       content:
                         application/json:
+                            schema:
+                                $ref: "#/components/schemas/ColumnHistorySchema"
                     404:
-                        description: returns 404 if history record is absent for given column id.
 
-
-                """
+        """
         try:
             column_history  = getColumnHistory(column_id=pk)
             logger.info(column_history)
             return self.response(200, result = column_history)
         except DatasetNotFoundError:
             response = self.response_404()
+            return response
 
 
     @expose("/init_column_history", methods=["GET"])
-    def column_history(self) -> Response:
+    def init_column_history(self) -> Response:
         """
                 ---
                 get:
-                  description: init column history
+                  description: init column history API to initialize google firebase once.
 
                   responses:
                     200:
