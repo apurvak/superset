@@ -21,11 +21,13 @@ const zlib = require('zlib');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const parsedArgs = require('yargs').argv;
 
-const { supersetPort = 8088, superset: supersetUrl = null } = parsedArgs;
-const backend = (supersetUrl || `http://localhost:${supersetPort}`).replace(
-  '//+$/',
-  '',
-); // strip ending backslash
+const {
+  supersetPort = 8088,
+  superset: supersetUrl = `https://home.quotron.ai`,
+} = parsedArgs;
+const backend = (
+  supersetUrl || `http://home.quotron.ai:${supersetPort}`
+).replace('//+$/', ''); // strip ending backslash
 
 let manifest;
 function isHTML(res) {
