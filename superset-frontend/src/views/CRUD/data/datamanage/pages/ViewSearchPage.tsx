@@ -11,6 +11,7 @@ import {
   Layout,
   Menu,
   Image,
+  notification,
 } from 'antd';
 import {
   ShareAltOutlined,
@@ -24,6 +25,8 @@ import {
   useTheme,
   css,
   getCategoricalSchemeRegistry,
+  getChartMetadataRegistry,
+  getChartBuildQueryRegistry,
 } from '@superset-ui/core';
 import type { SelectProps } from 'antd/es/select';
 
@@ -41,6 +44,8 @@ import {
 } from 'src/utils/localStorageHelpers';
 
 const categoricalSchemeRegistry = getCategoricalSchemeRegistry();
+const chartMetadataRegistry = getChartMetadataRegistry();
+const chartComponentRegistry = getChartBuildQueryRegistry();
 const { Sider } = Layout;
 const INITIAL_SIZES: [number, number] = [100, 0];
 const ViewSearchPage = () => {
@@ -54,6 +59,18 @@ const ViewSearchPage = () => {
   const [custoModal, setCustoModal] = useState<boolean>(false);
   const [outLined, setoutLined] = useState<number>(1);
   const [previewState, setPreviewState] = useState<boolean>(false);
+  const [customData, setCustomData] = useState({
+    sliceName: '',
+    chartTitle: '',
+    xAxis: '',
+    yAxis: '',
+    color: '',
+    image: '',
+  });
+  const [param, setParam] = useState<any>({});
+  const [query, setQuery] = useState<any>({});
+  const [type, setType] = useState<string>('');
+  const [format, setFormat] = useState<any>({});
   const handleInputChange = () => {
     SupersetClient.get({
       endpoint: '/api/v1/quotron/auto_complete/',
@@ -67,6 +84,8 @@ const ViewSearchPage = () => {
   const setTableType = (value: number) => {
     setoutLined(value);
   };
+  const chartList = Object.entries(chartComponentRegistry.items).map((item : any) => item[0])
+  const pluginList =  Object.entries(chartMetadataRegistry.items).filter((item: any) => chartList.includes(item[0]))
   const searchResult = (query: string) =>
     [...questionLists].map((value: any, idx) => {
       const category = `${value.question}`;
@@ -133,6 +152,17 @@ const ViewSearchPage = () => {
   const timeout = 60;
   const datasource = chartData.dataset;
   const formData = chartData.form_data;
+
+  useEffect(() => {
+    if (formData !== undefined && formData !== null) {
+      setFormat(formData);
+    }
+  }, [formData]);
+
+  useEffect(() => {
+    setFormat({ ...formData, viz_type: type });
+  }, [type]);
+
   const vizType = 'table';
   const ownState = '';
   const DEFAULT_SOUTH_PANE_HEIGHT_PERCENT = 40;
@@ -150,34 +180,24 @@ const ViewSearchPage = () => {
     isLinear: false,
   };
 
-  const customizeRowStyle = {
-    marginLeft: 20,
-    marginBlock: 30,
-  };
-  const TempData = [
-    [
-      { image: 'line.svg', title: 'Time-series Line Chart' },
-      { image: 'bar.svg', title: 'Time-series Bar Chart' },
-      { image: 'scatter.svg', title: 'Time-series scatter plot' },
-      { image: 'stepped.svg', title: 'Time-series stepped plot' },
-      { image: 'mix.svg', title: 'Mixed Time-series' },
-    ],
-    [
-      { image: 'pie.svg', title: 'Pie Chart' },
-      { image: 'gauge.svg', title: 'Gauge Chart' },
-      { image: 'partition.svg', title: 'Partition Chart' },
-      { image: 'treemap.svg', title: 'Treemap' },
-      { image: 'bignumber.svg', title: 'Big Number' },
-    ],
-    [
-      { image: 'seriestable.svg', title: 'Time-series Table' },
-      { image: 'pivottable.svg', title: 'Pivot Table' },
-    ],
-    [
-      { image: 'world.svg', title: 'World Map' },
-      { image: 'country.svg', title: 'Country Map' },
-    ],
-  ];
+  const TimeSeries = pluginList.filter(
+    (item: any) => item[1].value.category === 'Evolution',
+  );
+  const GeoMaps = pluginList.filter(
+    (item: any) =>
+      item[1].value.category === 'Map' || item[1].value.category === 'Ranking',
+  );
+  const Tables = pluginList.filter(
+    (item: any) => item[1].value.category === 'Table',
+  );
+  const TraditionalCharts = pluginList.filter(
+    (item: any) =>
+      item[1].value.category === 'Part of a Whole' ||
+      item[1].value.category === 'KPI',
+  );
+
+  const TempData = [TimeSeries, TraditionalCharts, Tables, GeoMaps];
+
   const {
     width: chartPanelWidth,
     height: chartPanelHeight,
@@ -199,7 +219,7 @@ const ViewSearchPage = () => {
       ? false
       : getItem(LocalStorageKeys.is_datapanel_open, false),
   );
-  const onCollapseChange = useCallback(isOpen => {
+  const onCollapseChange = useCallback((isOpen: any) => {
     let splitSizes;
     if (!isOpen) {
       splitSizes = INITIAL_SIZES;
@@ -212,6 +232,86 @@ const ViewSearchPage = () => {
     setSplitSizes(splitSizes);
     setShowSplit(isOpen);
   }, []);
+
+  const openCusoModal = async (item: any) => {
+    await setType(item[0]);
+    await SupersetClient.get({
+      endpoint: `api/v1/chart/${answer.result.slice_id}`,
+    })
+      .then(async ({ json = {} }) => {
+        await setParam(JSON.parse(json.result.params));
+        await setQuery(JSON.parse(json.result.query_context));
+        await setCustomData({
+          ...customData,
+          sliceName: json.result.slice_name,
+          chartTitle: item[1].value.name,
+          xAxis: JSON.parse(json.result.params).x_axis_title,
+          yAxis: JSON.parse(json.result.params).y_axis_title,
+          color: JSON.parse(json.result.query_context).form_data.color_scheme,
+          image: item[1].value.thumbnail,
+        });
+        await setCustoModal(true);
+      })
+      .catch(err => {
+        console.log('====== Save error ========', err);
+      });
+  };
+
+  const openVModal = () => {
+    setSelectVModal(true);
+  };
+
+  const selectChart = (item: any) => {
+    // setSelectVModal(false);
+    // setVizty
+  };
+
+  const onChange = async (target: any) => {
+    setCustomData({ ...customData, [target.name]: target.value });
+
+    if (target.name === 'color') {
+      await setPreviewState(false);
+      await setFormat({ ...format, color_scheme: target.value });
+      const tempData = query;
+      tempData.form_data.color_scheme = target.value;
+      await setQuery(tempData);
+      setPreviewState(true);
+    } else if (target.name === 'xAxis') {
+      setParam({ ...param, x_axis_title: target.value });
+    } else if (target.name === 'yAxis') {
+      setParam({ ...param, y_axis_title: target.value });
+    }
+  };
+
+  const onCustomSave = async () => {
+    await SupersetClient.put({
+      endpoint: `api/v1/chart/${answer.result.slice_id}`,
+      headers: { 'Content-Type': 'application/json' },
+      jsonPayload: {
+        params: JSON.stringify(param),
+        query_context: JSON.stringify(query),
+        query_context_generation: true,
+        viz_type: format.viz_type,
+      },
+    })
+      .then(async ({ json = {} }) => {
+        formData.viz_type = format.viz_type;
+        formData.color_scheme = format.color_scheme;
+        setFormat({ ...format, formData });
+        notification.success({
+          message: 'Success',
+          description: 'Changed chart successfully',
+        });
+
+        setSelectVModal(false);
+        setCustoModal(false);
+      })
+      .catch(err => {
+        console.log('====== Save error ========', err);
+      });
+    setCustoModal(false);
+  };
+
   const renderChart = useCallback(
     () => (
       <div
@@ -239,7 +339,7 @@ const ViewSearchPage = () => {
               <Col
                 span={12}
                 style={{ display: 'inline-block' }}
-                onClick={() => setSelectVModal(true)}
+                onClick={openVModal}
               >
                 <Space style={{ float: 'right', marginRight: 60 }}>
                   <Title level={4} underline>
@@ -268,7 +368,7 @@ const ViewSearchPage = () => {
                 force={force}
                 datasource={datasource}
                 errorMessage={errorMessage}
-                formData={formData}
+                formData={format !== null ? format : formData}
                 latestQueryFormData={chartData.latestQueryFormData}
                 // onQuery={chartData.onQuery}
                 queriesResponse={queriesResponse}
@@ -318,8 +418,37 @@ const ViewSearchPage = () => {
       timeout,
       triggerRender,
       vizType,
+      format,
     ],
   );
+
+  const renderModalChart = useCallback(() => {
+    return (
+      <ChartContainer
+        width={Math.floor(1100)}
+        height={300}
+        // ownState={ownState}
+        annotationData={undefined}
+        chartAlert={chartAlert}
+        chartStackTrace={chartStackTrace}
+        chartId={chartData?.slice?.slice_id}
+        chartStatus={chartStatus}
+        triggerRender={triggerRender}
+        force={force}
+        datasource={datasource}
+        errorMessage={errorMessage}
+        formData={format}
+        latestQueryFormData={chartData.latestQueryFormData}
+        // onQuery={chartData.onQuery}
+        queriesResponse={queriesResponse}
+        chartIsStale={chartIsStale}
+        // setControlValue={actions.setControlValue}
+        timeout={timeout}
+        triggerQuery={chartData.triggerQuery}
+        vizType={vizType}
+      />
+    );
+  }, [format?.viz_type, customData.color]);
   return (
     <>
       <Col
@@ -456,27 +585,28 @@ const ViewSearchPage = () => {
             className="site-layout"
             style={{ background: theme.colors.quotron.white, paddingLeft: 10 }}
           >
-            <Row>
-              {TempData[outLined - 1].map(function (item) {
+            <Row style={{marginBottom: 20}}>
+              {TempData[outLined - 1].map(function (item, index) {
                 return (
-                  <Col span={8} style={{ marginBottom: 10 }}>
+                  <Col span={8} style={{ marginBottom: 10 }} id={index}>
                     <div style={{ paddingRight: 30 }}>
                       <Image
-                        style={{ width: '120%', height: 'auto' }}
+                        // style={{ width: , height: 'auto' }}
                         preview={false}
-                        src={`../../../../../static/assets/images/customizethumb/${item.image}`}
+                        src={item[1].value.thumbnail}
                       />
-                      <p>{item.title}</p>
+                      <p>{item[1].value.name}</p>
                       <Row justify="space-between">
                         <Button
                           style={{
                             background: theme.colors.error.light1,
                             color: theme.colors.quotron.white,
                           }}
+                          onClick={() => selectChart(item)}
                         >
                           Select
                         </Button>
-                        <Button onClick={() => setCustoModal(true)}>
+                        <Button onClick={() => openCusoModal(item)}>
                           customize
                         </Button>
                       </Row>
@@ -490,10 +620,12 @@ const ViewSearchPage = () => {
       </Modal>
       <Modal
         visible={custoModal}
+        afterClose={() => setPreviewState(false)}
         title={
           <>
             <ArrowLeftOutlined
               onClick={() => {
+                setFormat({});
                 setCustoModal(false);
                 setPreviewState(false);
               }}
@@ -503,58 +635,75 @@ const ViewSearchPage = () => {
         }
         centered
         width={1200}
-        bodyStyle={{ padding: '0px' }}
+        bodyStyle={{ padding: '20px' }}
         closable={false}
-        onCancel={() => setCustoModal(false)}
-        footer={null}
+        // afterClose={() => setCustomData({ ...customData, color: '' })}
+        onCancel={() => {
+          setFormat(formData);
+          setCustoModal(false);
+        }}
+        onOk={onCustomSave}
+        okText="Save"
+        cancelText="Cancel"
       >
-        <Row style={{ height: '90vh' }} justify="space-between">
+        <Row justify="space-between">
           <Col span={8}>
-            <Row style={customizeRowStyle}>
+            <Row>
               <Title level={4}>Chart Title</Title>
-              <Input placeholder="Write Here" size="large" />
+              <Input
+                placeholder="Write Here"
+                size="large"
+                name="sliceName"
+                value={customData.sliceName}
+                onChange={e => onChange(e.target)}
+              />
             </Row>
-            <Row style={customizeRowStyle}>
+            <Row>
               <Title level={4}>Label of the X-axis:</Title>
-              <Input placeholder="Write Here" size="large" />
+              <Input
+                placeholder="Write Here"
+                size="large"
+                name="xAxis"
+                value={customData.xAxis}
+                onChange={e => onChange(e.target)}
+              />
             </Row>
-            <Row style={customizeRowStyle}>
+            <Row>
               <Title level={4}>Theme colors</Title>
-              <ColorSchemeControl {...defaultProps} />
-            </Row>
-            <Row style={{ marginTop: 350, marginLeft: 20 }}>
-              <Button type="primary" onClick={() => setCustoModal(false)}>
-                Save
-              </Button>
+              <ColorSchemeControl
+                {...defaultProps}
+                value={customData.color}
+                onChange={(value: string) =>
+                  onChange({ value: value, name: 'color' })
+                }
+              />
             </Row>
           </Col>
           <Col span={8}>
-            <Row style={customizeRowStyle}>
+            <Row>
               <Title level={4}>Label of the legends of the charts:</Title>
-              <Input placeholder="Write Here" size="large" />
+              <Input
+                placeholder="Write Here"
+                size="large"
+                name="title"
+                value={customData.chartTitle}
+                // onChange={(e)=>onChange(e.target)}
+              />
             </Row>
-            <Row style={customizeRowStyle}>
+            <Row>
               <Title level={4}>Label of the Y-axis:</Title>
-              <Input placeholder="Write Here" size="large" />
+              <Input
+                placeholder="Write Here"
+                size="large"
+                name="yAxis"
+                value={customData.yAxis}
+                onChange={e => onChange(e.target)}
+              />
             </Row>
           </Col>
-          <Col span={8} style={{ padding: 20 }}>
-            <Layout
-              style={{
-                background: theme.colors.quotron.gray_white,
-                height: '85vh',
-              }}
-            >
-              Preview
-              {previewState && (
-                <Image
-                  style={{ width: '100%', height: 'auto', marginTop: 200 }}
-                  preview={false}
-                  src="../../../../../static/assets/images/customizethumb/pie.svg"
-                />
-              )}
-            </Layout>
-          </Col>
+        </Row>
+        <Row style={{ marginTop: '20px' }}>
+          <Layout>{previewState ? renderModalChart() : ''}</Layout>
         </Row>
       </Modal>
     </>
