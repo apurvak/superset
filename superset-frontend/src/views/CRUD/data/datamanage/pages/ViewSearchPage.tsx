@@ -182,7 +182,7 @@ const ViewSearchPage = () => {
 
   const TimeSeries = pluginList.filter(
     (item: any) => item[1].value.category === 'Evolution',
-  );
+  ).reverse();
   const GeoMaps = pluginList.filter(
     (item: any) =>
       item[1].value.category === 'Map' || item[1].value.category === 'Ranking',
@@ -647,7 +647,7 @@ const ViewSearchPage = () => {
         cancelText="Cancel"
       >
         <Row justify="space-between">
-          <Col span={8}>
+          <Col span={10}>
             <Row>
               <Title level={4}>Chart Title</Title>
               <Input
@@ -679,7 +679,7 @@ const ViewSearchPage = () => {
               />
             </Row>
           </Col>
-          <Col span={8}>
+          <Col span={10}>
             <Row>
               <Title level={4}>Label of the legends of the charts:</Title>
               <Input
