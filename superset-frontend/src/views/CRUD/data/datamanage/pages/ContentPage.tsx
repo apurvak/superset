@@ -214,8 +214,8 @@ const ContentPage = ({ onViewTable }: ContentPageProps) => {
     setColumnExpression(columnExpression + value);
   };
 
-  const handleChange = (e: any) => {
-    setColumnExpression(e.target.value);
+  const handleChange = (value: string) => {
+    setColumnExpression(value);
   };
 
   const handleSort = () => {
